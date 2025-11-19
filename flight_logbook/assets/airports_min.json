@@ -1,0 +1,7 @@
+[
+  {"code": "LKPR", "name": "Václav Havel Airport Prague", "lat": 50.1008, "lon": 14.26},
+  {"code": "LKTB", "name": "Brno–Tuřany Airport", "lat": 49.1513, "lon": 16.6944},
+  {"code": "LKMT", "name": "Ostrava Leoš Janáček Airport", "lat": 49.6963, "lon": 18.1111},
+  {"code": "LKHK", "name": "Hradec Králové Airport", "lat": 50.2533, "lon": 15.8453},
+  {"code": "LKKU", "name": "Kunovice Airport", "lat": 49.0294, "lon": 17.4397}
+]
