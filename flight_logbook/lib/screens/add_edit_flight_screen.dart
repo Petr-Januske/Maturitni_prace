@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/flight.dart';
 import '../services/hive_service.dart';
+import '../services/io_service.dart';
 
 class AddEditFlightScreen extends StatefulWidget {
   final Flight? existing;
@@ -54,7 +55,21 @@ class _AddEditFlightScreenState extends State<AddEditFlightScreen> {
   Widget build(BuildContext context) {
     final isEdit = widget.existing != null;
     return Scaffold(
-      appBar: AppBar(title: Text(isEdit ? 'Upravit let' : 'Přidat let')),
+      appBar: AppBar(
+        title: Text(isEdit ? 'Upravit let' : 'Přidat let'),
+        actions: [
+          if (isEdit)
+            IconButton(
+              tooltip: 'Exportovat tento záznam',
+              icon: const Icon(Icons.upload_file),
+              onPressed: () async {
+                final f = widget.existing!;
+                await IOSimple.exportFlight(f);
+                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Export dokončen')));
+              },
+            ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -81,8 +96,7 @@ class _AddEditFlightScreenState extends State<AddEditFlightScreen> {
             ),
             TextFormField(
               controller: _aircraftCtrl,
-              decoration: const InputDecoration(labelText: 'Typ letadla'),
-              validator: _required,
+              decoration: const InputDecoration(labelText: 'Typ letadla (volitelné)'),
             ),
             TextFormField(
               controller: _regCtrl,
@@ -137,12 +151,15 @@ class _AddEditFlightScreenState extends State<AddEditFlightScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final minutes = _toMinutes(_durationCtrl.text);
+    final acText = _aircraftCtrl.text.trim();
+    final ac = acText.isEmpty ? null : acText;
+
     final base = Flight(
       id: widget.existing?.id ?? 0,
       date: _date,
       from: _fromCtrl.text.trim().toUpperCase(),
       to: _toCtrl.text.trim().toUpperCase(),
-      aircraft: _aircraftCtrl.text.trim(),
+      aircraft: ac,
       registration: _regCtrl.text.trim().toUpperCase(),
       durationMinutes: minutes,
       remarks: _remarksCtrl.text.trim().isEmpty ? null : _remarksCtrl.text.trim(),

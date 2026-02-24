@@ -51,7 +51,7 @@ class _HomeState extends State<Home> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.list), label: 'Lety'),
           NavigationDestination(icon: Icon(Icons.map), label: 'Mapa'),
-          NavigationDestination(icon: Icon(Icons.insights), label: 'Statistiky'),
+          NavigationDestination(icon: Icon(Icons.account_circle), label: 'Profil'),
         ],
       ),
     );

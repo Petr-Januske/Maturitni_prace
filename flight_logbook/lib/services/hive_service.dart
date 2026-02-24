@@ -3,6 +3,7 @@ import '../models/flight.dart';
 
 class HiveService {
   static const String flightsBoxName = 'flights';
+  static const String pilotBoxName = 'pilot_profile';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -10,6 +11,7 @@ class HiveService {
       Hive.registerAdapter(FlightAdapter());
     }
     await Hive.openBox<Flight>(flightsBoxName);
+    await Hive.openBox(pilotBoxName);
   }
 
   static Box<Flight> _box() => Hive.box<Flight>(flightsBoxName);
@@ -22,13 +24,15 @@ class HiveService {
 
   static Future<int> addFlight(Flight flight) async {
     final newId = (_box().isEmpty ? 1 : ((_box().values.map((f) => f.id).reduce((a, b) => a > b ? a : b)) + 1));
-    final newFlight = flight.copyWith(id: newId);
+    final now = DateTime.now();
+    final newFlight = flight.copyWith(id: newId, createdAt: now, modifiedAt: now);
     await _box().put(newId, newFlight);
     return newId;
   }
 
   static Future<void> updateFlight(Flight flight) async {
-    await _box().put(flight.id, flight);
+    final updated = flight.copyWith(modifiedAt: DateTime.now());
+    await _box().put(flight.id, updated);
   }
 
   static Future<void> deleteFlight(int id) async {
@@ -37,5 +41,26 @@ class HiveService {
 
   static double getTotalHours() {
     return _box().values.fold<double>(0.0, (sum, f) => sum + f.durationHours);
+  }
+
+  // Pilot profile stored as a simple map in a separate box.
+  // Keys: name:String, license:String, ratings:List<String>, allowedAircraft:List<String>
+  static Box _pilotBox() => Hive.box(pilotBoxName);
+
+  static Map<String, dynamic> getPilotProfile() {
+    final raw = _pilotBox().get('profile');
+    if (raw == null) return {};
+    if (raw is Map) {
+      final result = <String, dynamic>{};
+      raw.forEach((k, v) {
+        result[k.toString()] = v;
+      });
+      return result;
+    }
+    return {};
+  }
+
+  static Future<void> savePilotProfile(Map<String, dynamic> profile) async {
+    await _pilotBox().put('profile', profile);
   }
 }
