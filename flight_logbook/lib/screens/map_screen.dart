@@ -37,7 +37,7 @@ class _MapScreenState extends State<MapScreen> {
       body: ValueListenableBuilder(
         valueListenable: box.listenable(),
         builder: (context, Box<Flight> b, _) {
-          final markers = _buildMarkers(b.values);
+          final markers = _buildMarkers(b.values.toList());
           final center = markers.isNotEmpty ? markers.first.point : const LatLng(49.8, 15.5); // CZ center
           return FlutterMap(
             options: MapOptions(initialCenter: center, initialZoom: 6),

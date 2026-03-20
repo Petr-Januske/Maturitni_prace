@@ -44,7 +44,9 @@ class AirportIndex {
     if (lines.isEmpty) return 0;
     final header = _parseCsvLine(lines.first);
     final idx = <String, int>{};
-    for (int i = 0; i < header.length; i++) idx[header[i].toLowerCase()] = i;
+    for (int i = 0; i < header.length; i++) {
+      idx[header[i].toLowerCase()] = i;
+    }
 
     int identIdx = idx['ident'] ?? idx['icao'] ?? idx['code'] ?? -1;
     int nameIdx = idx['name'] ?? idx['airport_name'] ?? -1;
@@ -119,6 +121,24 @@ class AirportIndex {
   }
 
   static double _deg2rad(double deg) => deg * (pi / 180.0);
+
+  // Search airports by code or name (case-insensitive). Returns up to [limit] matches.
+  static List<Airport> search(String query, {int limit = 10}) {
+    if (query.trim().isEmpty) return const [];
+    final q = query.toLowerCase();
+    final list = _list ?? _byCode?.values.toList(growable: false) ?? const [];
+    final matches = list.where((a) {
+      return a.code.toLowerCase().contains(q) || a.name.toLowerCase().contains(q);
+    }).toList();
+    matches.sort((a, b) {
+      final ai = a.code.toLowerCase().indexOf(q);
+      final bi = b.code.toLowerCase().indexOf(q);
+      if (ai != bi) return ai.compareTo(bi);
+      return a.name.compareTo(b.name);
+    });
+    if (matches.length > limit) return matches.sublist(0, limit);
+    return matches;
+  }
 
   // reuse CSV line parser for loading
   static List<String> _parseCsvLine(String line) {

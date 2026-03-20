@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/flight.dart';
 import '../services/hive_service.dart';
 import '../services/io_service.dart';
+import '../services/airport_index.dart';
 
 class AddEditFlightScreen extends StatefulWidget {
   final Flight? existing;
@@ -10,6 +11,70 @@ class AddEditFlightScreen extends StatefulWidget {
 
   @override
   State<AddEditFlightScreen> createState() => _AddEditFlightScreenState();
+}
+
+class AirportAutocomplete extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+  final String? Function(String?)? validator;
+  const AirportAutocomplete({required this.controller, required this.label, this.validator, super.key});
+
+  @override
+  State<AirportAutocomplete> createState() => _AirportAutocompleteState();
+}
+
+class _AirportAutocompleteState extends State<AirportAutocomplete> {
+  @override
+  Widget build(BuildContext context) {
+    return Autocomplete<Airport>(
+      displayStringForOption: (a) => '${a.code} — ${a.name}',
+      optionsBuilder: (TextEditingValue textEditingValue) {
+        return AirportIndex.search(textEditingValue.text);
+      },
+      fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+        textEditingController.text = widget.controller.text;
+        textEditingController.selection = widget.controller.selection;
+        textEditingController.addListener(() {
+          if (widget.controller.text != textEditingController.text) {
+            widget.controller.text = textEditingController.text;
+            widget.controller.selection = textEditingController.selection;
+          }
+        });
+        return TextFormField(
+          controller: textEditingController,
+          focusNode: focusNode,
+          decoration: InputDecoration(labelText: widget.label),
+          validator: widget.validator,
+        );
+      },
+      onSelected: (airport) {
+        widget.controller.text = airport.code;
+        widget.controller.selection = TextSelection.fromPosition(TextPosition(offset: widget.controller.text.length));
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200, maxWidth: 600),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final Airport option = options.elementAt(index);
+                  return ListTile(
+                    title: Text('${option.code} — ${option.name}'),
+                    onTap: () => onSelected(option),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _AddEditFlightScreenState extends State<AddEditFlightScreen> {
@@ -38,6 +103,12 @@ class _AddEditFlightScreenState extends State<AddEditFlightScreen> {
       _durationCtrl.text = '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
     }
     _remarksCtrl.text = e?.remarks ?? '';
+    _loadAirports();
+  }
+
+  Future<void> _loadAirports() async {
+    await AirportIndex.ensureLoaded();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -84,14 +155,14 @@ class _AddEditFlightScreenState extends State<AddEditFlightScreen> {
                 ),
               ],
             ),
-            TextFormField(
+            AirportAutocomplete(
               controller: _fromCtrl,
-              decoration: const InputDecoration(labelText: 'Z letiště (kód, např. LKPR)'),
+              label: 'Z letiště (kód, např. LKPR)',
               validator: _required,
             ),
-            TextFormField(
+            AirportAutocomplete(
               controller: _toCtrl,
-              decoration: const InputDecoration(labelText: 'Na letiště (kód, např. LKTB)'),
+              label: 'Na letiště (kód, např. LKTB)',
               validator: _required,
             ),
             TextFormField(

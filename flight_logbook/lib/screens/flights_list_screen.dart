@@ -107,11 +107,14 @@ class _FlightsListScreenState extends State<FlightsListScreen> {
           }
           final yearsList = years.toList()..sort((a, b) => b.compareTo(a));
 
+          // determine active year (guard against value not present in available years)
+          final activeYear = (_selectedYear != null && yearsList.contains(_selectedYear)) ? _selectedYear : (yearsList.isNotEmpty ? yearsList.first : null);
+
           // apply filters
           final query = _searchCtrl.text.trim().toLowerCase();
           final filtered = flights.where((f) {
             final dt = f.date;
-            if (_selectedYear != null && dt.year != _selectedYear) return false;
+            if (activeYear != null && dt.year != activeYear) return false;
 
             if (_startDate != null) {
               final s = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime?.hour ?? 0, _startTime?.minute ?? 0);
@@ -182,7 +185,7 @@ class _FlightsListScreenState extends State<FlightsListScreen> {
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                                         child: DropdownButton<int>(
-                                          value: _selectedYear,
+                                          value: activeYear,
                                           underline: const SizedBox.shrink(),
                                           items: yearsList.map((y) => DropdownMenuItem<int>(value: y, child: Text(y.toString()))).toList(),
                                           onChanged: (v) => setState(() => _selectedYear = v),
@@ -292,10 +295,9 @@ class _FlightsListScreenState extends State<FlightsListScreen> {
                                         ),
                                       if (_startTime != null || _endTime != null) InputChip(label: Text('Čas: ${_startTime != null ? _startTime!.format(context) : ''}${_startTime != null && _endTime != null ? '–' : ''}${_endTime != null ? _endTime!.format(context) : ''}'), onDeleted: () => setState(() { _startTime = null; _endTime = null; })),
                                       if (_searchCtrl.text.trim().isNotEmpty) InputChip(label: Text('Hledat: ${_searchCtrl.text}'), onDeleted: () => setState(() { _searchCtrl.clear(); })),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                      ],
+                                    ),
+                             ) ],
                             ),
                           ),
                         ),
@@ -309,7 +311,7 @@ class _FlightsListScreenState extends State<FlightsListScreen> {
                       // header
                       Container(
                         width: double.infinity,
-                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                         child: Text(
                           '${DateFormat.MMMM().format(DateTime(int.parse(key.split('-')[0]), int.parse(key.split('-')[1])))} ${key.split('-')[0]}',
@@ -369,6 +371,7 @@ class _FlightsListScreenState extends State<FlightsListScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
+
   }
 
   String _formatHours(int minutes) {
